@@ -31,7 +31,7 @@ namespace BotGameDrower
         public bool wasPressedMouse = false;
         public Vector2 clickPos = new Vector2(0, 0);
         public Vector2 realPos = new Vector2(tileWidth * 100, tileHeight * 100);
-        List<MyRectangle> first = new List<MyRectangle>();
+        MyRectangle[,] first;
         List<MyRectangle> second = new List<MyRectangle>();
         List<MyRectangle> third = new List<MyRectangle>();
         bool [,] warFogMap;
@@ -50,6 +50,7 @@ namespace BotGameDrower
             graphics.PreferredBackBufferHeight = 1000; //graphics.PreferredBackBufferHeight * 2;
             graphics.PreferredBackBufferWidth = 2000;// graphics.PreferredBackBufferWidth * 2;
             pole = Generate(rnd,200,200);
+            first = new MyRectangle[pole.GetLength(0), pole.GetLength(1)];
             int xx;
             int yy;
             do
@@ -131,7 +132,7 @@ namespace BotGameDrower
                                 boolPole[xx, yy] = false;
                             }
                         }
-                        first.Add(new MyRectangle(width, height, 0, new Vector2(x, y)));
+                        first[x,y] = (new MyRectangle(width, height, 0, new Vector2(x, y)));
                     }
                     goto Break1;
                     Break:;
@@ -145,7 +146,7 @@ namespace BotGameDrower
                 {
                     if (boolPole[x, y])
                     {
-                        first.Add(new MyRectangle(1, 1, 0, new Vector2(x, y)));
+                        first[x, y] = (new MyRectangle(1, 1, 0, new Vector2(x, y)));
                     }
                 }
             }
@@ -397,20 +398,21 @@ namespace BotGameDrower
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Blue);
+            GraphicsDevice.Clear(Color.Black);
             spriteBatch.Begin();
-            foreach (var rec in first)
+            Vector2 v = new Vector2(thisMouse.position.X / tileWidth, thisMouse.position.Y / tileHeight);
+            for (int x = (int)MathHelper.Max(0, v.X - 30); x < (int)MathHelper.Min(pole.GetLength(0), v.X + 30); x++)
             {
-                int brightness = (int)(240 - 6 * (rec.height * rec.width)); 
-                spriteBatch.Draw(boxTexture, new Rectangle((int)(ScreenCenter.X - realPos.X + rec.v1.X * tileWidth), (int)(ScreenCenter.Y - realPos.Y + rec.v1.Y * tileHeight),(int)(rec.width * tileWidth), (int)(rec.height * tileHeight)), new Rectangle(0, 0, 80, 80),new Color(brightness, brightness, brightness));
-            }
-            for (int x = 0;x < pole.GetLength(0); x++)
-            {
-                for (int y = 0; y < pole.GetLength(1); y++)
+                for (int y = (int)MathHelper.Max(0, v.Y - 30); y < (int)MathHelper.Min(pole.GetLength(1), v.Y + 30); y++)
                 {
                     if (!warFogMap[x,y])
                     {
                         spriteBatch.Draw(floorTexture, new Rectangle((int)(ScreenCenter.X - realPos.X + x * tileWidth), (int)(ScreenCenter.Y - realPos.Y + y * tileHeight), tileWidth, tileHeight), new Rectangle(32 * (Math.Abs(x - y) % 2), 0, 32, 32), Color.Black);
+                    }
+                    else if(first[x,y] != null)
+                    {
+                        int brightness = (int)(240 - 6 * (first[x, y].height * first[x, y].width));
+                        spriteBatch.Draw(boxTexture, new Rectangle((int)(ScreenCenter.X - realPos.X + first[x, y].v1.X * tileWidth), (int)(ScreenCenter.Y - realPos.Y + first[x, y].v1.Y * tileHeight), (int)(first[x, y].width * tileWidth), (int)(first[x, y].height * tileHeight)), new Rectangle(0, 0, 80, 80), new Color(brightness, brightness, brightness));
                     }
                     else if (!pole[x,y].isObstacle)
                     {
